@@ -33,6 +33,9 @@ jobs:
           environment-name: music2midi
           cache-environment: true # Di sini fitur ini VALID dan bekerja sangat baik
           cache-downloads: true
+          create-args: >-
+            fluidsynth
+            python=3.9
 
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
