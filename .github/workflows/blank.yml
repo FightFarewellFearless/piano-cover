@@ -12,18 +12,15 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
+      - name: install deps
         run: sudo apt-get update && sudo apt-get install fluidsynth ffmpeg
-      - name: conda env setup
-        run: conda env create -f environment.yaml && conda activate music2midi
       - name: cloning github
         run: git clone https://github.com/ytinyui/music2midi
       - name: cd music2midi
         run: cd music2midi
+      - name: conda env setup
+        run: conda env create -f environment.yaml && conda activate music2midi
+      - uses: actions/checkout@v4
       - name: downloading model
         run: wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
       - run: cd ~ && python piano.py
