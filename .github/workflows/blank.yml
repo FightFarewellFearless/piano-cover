@@ -43,5 +43,8 @@ jobs:
       - name: Run script
         shell: bash -el {0}
         working-directory: ./my_project # Pindah ke folder repo Anda
+        env:
+          # Memberitahu Python agar melirik ke folder sebelah untuk mencari modul
+          PYTHONPATH: ${{ github.workspace }}/music2midi_deps
         run: |
           python piano.py
