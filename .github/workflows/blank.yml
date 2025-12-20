@@ -41,6 +41,11 @@ jobs:
       - name: downloading model
         run: |
           wget -O my_project/model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+      - name: reinstalling soundfile
+        run: |
+          pip uninstall pysoundfile
+          pip uninstall soundfile
+          pip install soundfile
 
       # 6. Eksekusi skrip di dalam folder repo Anda
       - name: Run script
