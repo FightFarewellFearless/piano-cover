@@ -19,6 +19,8 @@ jobs:
       - name: conda env setup
         run: cd music2midi && conda env create -f environment.yaml && conda activate music2midi
       - uses: actions/checkout@v4
+        with:
+          clean: false
       - name: downloading model
         run: wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
       - run: cd ~ && python piano.py
