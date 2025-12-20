@@ -11,7 +11,7 @@ jobs:
       - name: install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y fluidsynth ffmpeg
+          sudo apt-get install -y ffmpeg
 
       # 2. Checkout Repo Musik2Midi (Hanya untuk ambil environment.yaml)
       - name: Checkout music2midi (external)
