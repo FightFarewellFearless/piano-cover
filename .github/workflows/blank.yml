@@ -36,6 +36,7 @@ jobs:
           create-args: >-
             fluidsynth
             python=3.9
+            pysoundfile
 
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
