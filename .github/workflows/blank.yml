@@ -38,20 +38,15 @@ jobs:
             python=3.9
             librosa
 
-      - name: Force Update Soundfile
-        shell: bash -el {0}
-        run: |
-          # Pastikan menggunakan versi >= 0.11.0
-          pip install --upgrade soundfile
+      # - name: Force Update Soundfile
+      #   shell: bash -el {0}
+      #   run: |
+      #     # Pastikan menggunakan versi >= 0.11.0
+      #     pip install --upgrade soundfile
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
         run: |
           wget -O my_project/model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
-      # - name: reinstalling soundfile
-      #   run: |
-      #     pip uninstall pysoundfile
-      #     pip uninstall soundfile
-      #     pip install soundfile
 
       # 6. Eksekusi skrip di dalam folder repo Anda
       - name: Run script
@@ -61,6 +56,9 @@ jobs:
           # Memberitahu Python agar melirik ke folder sebelah untuk mencari modul
           PYTHONPATH: ${{ github.workspace }}/music2midi_deps
         run: |
+          pip uninstall pysoundfile
+          pip uninstall soundfile
+          pip install soundfile
           python piano.py
 
       - name: Upload Piano Results
