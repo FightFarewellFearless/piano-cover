@@ -17,7 +17,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: sudo apt-get install fluidsynth ffmpeg
+        run: sudo apt-get update && sudo apt-get install fluidsynth ffmpeg
       - name: conda env setup
         run: conda env create -f environment.yaml && conda activate music2midi
       - name: cloning github
