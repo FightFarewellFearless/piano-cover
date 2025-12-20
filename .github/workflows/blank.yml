@@ -56,9 +56,9 @@ jobs:
           # Memberitahu Python agar melirik ke folder sebelah untuk mencari modul
           PYTHONPATH: ${{ github.workspace }}/music2midi_deps
         run: |
-          pip uninstall pysoundfile -y
-          pip uninstall soundfile -y
-          pip install soundfile -y
+          pip uninstall -y pysoundfile
+          pip uninstall -y soundfile
+          pip install -y soundfile
           python piano.py
 
       - name: Upload Piano Results
