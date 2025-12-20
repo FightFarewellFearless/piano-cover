@@ -1,26 +1,48 @@
-
 name: test
 on:
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: install deps
-        run: sudo apt-get update && sudo apt-get install fluidsynth ffmpeg
-      - name: cloning github
-        run: git clone https://github.com/ytinyui/music2midi
-      - name: conda env setup
-        run: cd music2midi && conda env create -f environment.yaml && conda activate music2midi
-      - uses: actions/checkout@v4
+      # 1. Install System Dependencies
+      - name: install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fluidsynth ffmpeg
+
+      # 2. Checkout Repo Musik2Midi (Hanya untuk ambil environment.yaml)
+      - name: Checkout music2midi (external)
+        uses: actions/checkout@v4
         with:
-          clean: false
+          repository: ytinyui/music2midi
+          path: music2midi_deps  # Diletakkan di folder khusus
+
+      # 3. Checkout Repo Anda Sendiri (Tempat piano.py berada)
+      - name: Checkout own repo
+        uses: actions/checkout@v4
+        with:
+          path: my_project       # Diletakkan di folder berbeda agar tidak bentrok
+
+      # 4. Setup Conda menggunakan file dari repo eksternal
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: music2midi
+          environment-file: music2midi_deps/environment.yaml # Path ke folder eksternal
+          cache-environment: true
+          use-mamba: true
+
+      # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
-        run: wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
-      - run: cd ~ && python piano.py
+        run: |
+          wget -O my_project/model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+
+      # 6. Eksekusi skrip di dalam folder repo Anda
+      - name: Run script
+        shell: bash -el {0}
+        working-directory: ./my_project # Pindah ke folder repo Anda
+        run: |
+          python piano.py
