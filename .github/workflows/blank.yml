@@ -48,3 +48,11 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/music2midi_deps
         run: |
           python piano.py
+
+      - name: Upload Piano Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-midi-and-audio  # Nama folder artifact di GitHub
+          path: |
+            my_project/midi.mid
+            my_project/audio.mp3
