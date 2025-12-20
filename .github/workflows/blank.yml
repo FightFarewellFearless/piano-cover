@@ -16,10 +16,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install fluidsynth ffmpeg
       - name: cloning github
         run: git clone https://github.com/ytinyui/music2midi
-      - name: cd music2midi
-        run: cd music2midi
       - name: conda env setup
-        run: conda env create -f environment.yaml && conda activate music2midi
+        run: cd music2midi && conda env create -f environment.yaml && conda activate music2midi
       - uses: actions/checkout@v4
       - name: downloading model
         run: wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
