@@ -58,7 +58,7 @@ jobs:
         run: |
           pip uninstall -y pysoundfile
           pip uninstall -y soundfile
-          pip install -y soundfile
+          pip install soundfile
           python piano.py
 
       - name: Upload Piano Results
