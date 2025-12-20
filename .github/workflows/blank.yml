@@ -37,7 +37,6 @@ jobs:
             fluidsynth
             python=3.9
             librosa
-            # Kita tidak instal soundfile via mamba di sini, tapi via pip nanti
 
       - name: Force Update Soundfile
         shell: bash -el {0}
