@@ -36,8 +36,14 @@ jobs:
           create-args: >-
             fluidsynth
             python=3.9
-            pysoundfile
+            librosa
+            # Kita tidak instal soundfile via mamba di sini, tapi via pip nanti
 
+      - name: Force Update Soundfile
+        shell: bash -el {0}
+        run: |
+          # Pastikan menggunakan versi >= 0.11.0
+          pip install --upgrade soundfile
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
         run: |
