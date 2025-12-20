@@ -27,7 +27,7 @@ jobs:
           path: my_project       # Diletakkan di folder berbeda agar tidak bentrok
 
       - name: Setup Micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: music2midi_deps/environment.yaml
           environment-name: music2midi
