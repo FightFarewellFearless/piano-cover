@@ -26,14 +26,13 @@ jobs:
         with:
           path: my_project       # Diletakkan di folder berbeda agar tidak bentrok
 
-      # 4. Setup Conda menggunakan file dari repo eksternal
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v1
         with:
-          activate-environment: music2midi
-          environment-file: music2midi_deps/environment.yaml # Path ke folder eksternal
-          cache-environment: true
-          use-mamba: true
+          environment-file: music2midi_deps/environment.yaml
+          environment-name: music2midi
+          cache-environment: true # Di sini fitur ini VALID dan bekerja sangat baik
+          cache-downloads: true
 
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
