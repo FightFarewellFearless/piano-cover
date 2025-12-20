@@ -46,7 +46,7 @@ jobs:
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
         run: |
-          wget -O my_project/model.ckpt https://zenodo.org/records/11649613/files/model_00075000?download=1
+          wget -O my_project/model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
 
       # 6. Eksekusi skrip di dalam folder repo Anda
       - name: Run script
