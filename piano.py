@@ -3,14 +3,22 @@ import torch
 import IPython.display as ipd
 from music2midi.plot_midi import plot_midi_sequence
 import soundfile as sf
-
+import os
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-ckpt_path = "music2midi/model.ckpt"  # change this to the downloaded checkpoint file path
-model = Music2MIDI.load_from_checkpoint(ckpt_path, config_path="config.yaml")
+
+# SESUAIKAN PATH INI:
+# Karena model di-download ke folder 'my_project' (lokasi skrip ini)
+ckpt_path = "model.ckpt" 
+
+# Config biasanya ada di dalam repo music2midi_deps
+config_path = "../music2midi_deps/config.yaml" 
+
+model = Music2MIDI.load_from_checkpoint(ckpt_path, config_path=config_path)
 model.to(device).eval()
 print("model loaded successfully")
 
+# Pastikan file audio input ada di folder yang sama (my_project)
 input_audio_path = './music.mp3'
 midi_data = model.generate(input_audio_path)
 
