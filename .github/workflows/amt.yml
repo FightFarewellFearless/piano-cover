@@ -67,7 +67,7 @@ jobs:
       - name: executing
         working-directory: ./amt/
         run: |
-          source .venv/bin/activate
+          source ~/.venv/bin/activate
           python infer ../my/music.mp3
 
       - name: Upload Piano Results
