@@ -26,8 +26,21 @@ jobs:
         with:
           path: my       # Diletakkan di folder berbeda agar tidak bentrok
 
+      - name: Cache Virtual Environment
+        id: cache-venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          # The key uses a hash of your dependency file; if the file changes, the cache misses.
+          key: ${{ runner.os }}-venv-1
+          restore-keys: |
+            ${{ runner.os }}-venv-
       - name: install deps
-        run: pip install torch torchaudio soundfile pretty-midi tqdm
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install torch torchaudio soundfile pretty-midi tqdm
 
       # - name: Force Update Soundfile
       #   shell: bash -el {0}
@@ -52,7 +65,10 @@ jobs:
       #     pip install soundfile
       #     python piano.py
       - name: executing
-        run: python infer ../my/music.mp3
+        working-directory: ./amt/
+        run: |
+          source .venv/bin/activate
+          python infer ../my/music.mp3
 
       - name: Upload Piano Results
         uses: actions/upload-artifact@v4
