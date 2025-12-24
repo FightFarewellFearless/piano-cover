@@ -1,4 +1,4 @@
-name: test
+name: amt
 on:
   workflow_dispatch:
 
