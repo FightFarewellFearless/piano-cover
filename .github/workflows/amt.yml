@@ -37,7 +37,7 @@ jobs:
       # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
         run: |
-          wget -O amt/models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
+          wget -P amt/models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
 
       # 6. Eksekusi skrip di dalam folder repo Anda
       # - name: Run script
