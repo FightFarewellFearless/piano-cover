@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # steps:
+    steps:
     #   # 1. Install System Dependencies
     #   - name: install system deps
     #     run: |
