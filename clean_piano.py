@@ -70,4 +70,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python clean_piano.py <input_vocal.mid> <output_piano.mid>")
     else:
-        clean_midi_for_piano(sys.argv, sys.argv)
+        clean_midi_for_piano(sys.argv[1], sys.argv[2])
