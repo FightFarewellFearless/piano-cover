@@ -116,7 +116,7 @@ jobs:
       - name: running basic-pitch to convert vocals to midi
         if: matrix.model == 'music2midi'
         run: |
-          basic-pitch . ./audiosep_output/vocals_output.mp3 --minimum-note-length 5 --no-pitch-bends
+          basic-pitch . ./audiosep_output/vocals_output.mp3
           mv vocals_output_basic_pitch.mid my/midi.mid
       - name: Converting to mp3
         if: matrix.model == 'music2midi'
