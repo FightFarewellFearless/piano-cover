@@ -109,7 +109,10 @@ jobs:
           cache: 'pip'
       - name: Installing basic pitch
         if: matrix.model == 'music2midi'
-        run: pip install basic-pitch
+        run: |
+          pip install --upgrade pip
+          pip install "numpy<2"
+          pip install basic-pitch
       - name: running basic-pitch to convert vocals to midi
         if: matrix.model == 'music2midi'
         run: |
