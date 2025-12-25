@@ -94,11 +94,19 @@ jobs:
       # LOGIKA KHUSUS: MUSIC2MIDI (Hanya jalan jika matrix == music2midi)
       # ------------------------------------------------------------------
 
+      - name: Create requirements.txt
+        if: matrix.model == 'music2midi'
+        run: |
+          # KITA WAJIB MEMAKSA NUMPY < 2 AGAR BASIC-PITCH TIDAK CRASH
+          echo "numpy<2" > requirements.txt
+          echo "basic-pitch" >> requirements.txt
+
       - name: Set up Python 3.10
         if: matrix.model == 'music2midi'
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
       - name: Installing basic pitch
         if: matrix.model == 'music2midi'
         run: pip install basic-pitch
