@@ -127,7 +127,7 @@ jobs:
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
           unzip FluidR3_GM.zip
           sudo apt install timidity
-          timidity my/midi.mid --force-program=0 -A 50 -EFreverb=0 -EFchorus=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          timidity my/midi.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
           ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "my/audio.mp3"
       # - name: Checkout music2midi
       #   if: matrix.model == 'music2midi'
