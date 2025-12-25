@@ -26,11 +26,6 @@ jobs:
         with:
           path: my
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - name: Install FFmpeg
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -137,12 +132,6 @@ jobs:
         with:
           repository: misya11p/amt-apc
           path: amt
-
-      - name: Setup Python (AMT)
-        if: matrix.model == 'amt'
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
 
       - name: Run AMT Script
         if: matrix.model == 'amt'
