@@ -125,7 +125,7 @@ jobs:
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
           unzip FluidR3_GM.zip
           sudo apt install timidity
-          timidity my/midi.mid --default-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          timidity my/midi.mid -I 0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
           ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "my/audio.mp3"
       # - name: Checkout music2midi
       #   if: matrix.model == 'music2midi'
@@ -183,7 +183,7 @@ jobs:
           echo "Mendownload SoundFont Piano..."
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
           unzip FluidR3_GM.zip
-          timidity output.mid --default-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
+          timidity output.mid -I 0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL (Dinamis sesuai nama matrix)
