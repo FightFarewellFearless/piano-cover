@@ -39,7 +39,7 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           # Added torchcodec to the list
-          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm
+          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm yt-dlp
 
       - name: downloading model
         run: |
