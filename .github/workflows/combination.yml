@@ -74,7 +74,7 @@ jobs:
         if: steps.cache-audiosep.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss! Installing dependencies..."
-          python -m audiosep audiosep
+          python -m venv audiosep
           source audiosep/bin/activate
           pip install "audio-separator[cpu]"
       - name: Add venv to PATH
