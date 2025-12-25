@@ -126,9 +126,10 @@ jobs:
       - name: executing AMT
         working-directory: ./amt/
         run: |
+          sudo apt install timidity
           # No 'source' needed because we added .venv/bin to GITHUB_PATH
           python -m infer ../audiosep_output/instrumental_output.mp3
-          ffmpeg -f fluidsynth -i output.mid -f mp3 output.mp3
+          timidity output.mid -Ow -o - | ffmpeg -i - -acodec libmp3lame -ab 192k output.mp3
 
       - name: Upload Piano Results
         uses: actions/upload-artifact@v4
