@@ -173,12 +173,12 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      # Ambil Vocals
+      # Ambil Vocals piano
       - name: Download Stems
         uses: actions/download-artifact@v4
         with:
-          name: stems-output
-          path: stems
+          name: output-music2midi
+          path: music2midi
 
       # Ambil Hasil AMT
       - name: Download AMT Output
@@ -191,7 +191,7 @@ jobs:
       - name: Combine Audio Outputs
         run: |
           # Perhatikan path inputnya disesuaikan dengan folder download artifact
-          ffmpeg -i ./stems/vocals_output.mp3 \
+          ffmpeg -i ./music2midi/audio.mp3 \
                  -i ./amt_result/amt/output.mp3 \
                  -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" \
                  -c:a libmp3lame -q:a 2 final_combined_output.mp3
