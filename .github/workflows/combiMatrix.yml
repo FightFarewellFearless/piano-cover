@@ -95,12 +95,15 @@ jobs:
       # ------------------------------------------------------------------
 
       - name: Installing basic pitch
+        if: matrix.model == 'music2midi'
         run: pip install basic-pitch
       - name: running basic-pitch to convert vocals to midi
+        if: matrix.model == 'music2midi'
         run: |
           basic-pitch . ./audiosep_output/vocals_output.mp3 --minimum-note-length 100
           mv vocals_output.mid my/midi.mid
       - name: Converting to mp3
+        if: matrix.model == 'music2midi'
         run: |
           echo "Mendownload SoundFont Piano..."
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
