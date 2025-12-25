@@ -117,7 +117,7 @@ jobs:
         if: matrix.model == 'music2midi'
         run: |
           basic-pitch . ./audiosep_output/vocals_output.mp3 --minimum-note-length 100
-          mv vocals_output.mid my/midi.mid
+          mv vocals_output_basic_pitch.mid my/midi.mid
       - name: Converting to mp3
         if: matrix.model == 'music2midi'
         run: |
