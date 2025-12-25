@@ -88,7 +88,7 @@ jobs:
           ./audiosep/bin/audio-separator ./my/music.mp3 \
             --output_format=MP3 \
             --output_dir audiosep_output \
-            --model_filename UVR-MDX-NET-Inst_HQ_4.onnx \
+            --model_filename Kim_Vocal_2.onnx \
             --custom_output_names='{"Vocals": "vocals_output", "Drums": "drums_output", "Instrumental": "instrumental_output", "Bass": "bass_output"}'
 
       #MUSIC2MIDI PART
