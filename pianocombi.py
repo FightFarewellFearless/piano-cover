@@ -11,8 +11,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # Karena model di-download ke folder 'my_project' (lokasi skrip ini)
 ckpt_path = "model.ckpt" 
 
-# Config biasanya ada di dalam repo music2midi_deps
-config_path = "../music2midi_deps/config.yaml" 
+# Config biasanya ada di dalam repo music2midi
+config_path = "../music2midi/config.yaml"
 
 model = Music2MIDI.load_from_checkpoint(ckpt_path, config_path=config_path)
 model.to(device).eval()
