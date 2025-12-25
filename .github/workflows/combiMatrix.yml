@@ -113,11 +113,13 @@ jobs:
           pip install --upgrade pip
           pip install "numpy<2"
           pip install basic-pitch
+          pip install mido
       - name: running basic-pitch to convert vocals to midi
         if: matrix.model == 'music2midi'
         run: |
           basic-pitch . ./audiosep_output/vocals_output.mp3
-          mv vocals_output_basic_pitch.mid my/midi.mid
+          mv vocals_output_basic_pitch.mid my/vocal.mid
+          python ./my/clean_piano.py ./my/vocal.mid ./my/midi.mid
       - name: Converting to mp3
         if: matrix.model == 'music2midi'
         run: |
