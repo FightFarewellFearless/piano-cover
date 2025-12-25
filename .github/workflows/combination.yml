@@ -1,0 +1,139 @@
+name: combi
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Checkout AMT (external)
+        uses: actions/checkout@v4
+        with:
+          repository: misya11p/amt-apc
+          path: amt
+      - name: Checkout music2midi (external)
+        uses: actions/checkout@v4
+        with:
+          repository: ytinyui/music2midi
+          path: music2midi
+      - name: Checkout own repo
+        uses: actions/checkout@v4
+        with:
+          path: my
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: music2midi/environment.yaml
+          environment-name: music2midi
+          cache-environment: true # Di sini fitur ini VALID dan bekerja sangat baik
+          cache-downloads: true
+          create-args: >-
+            fluidsynth
+            python=3.9
+            librosa
+      - name: Cache Virtual Environment
+        id: cache-venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-venv-1
+          restore-keys: |
+            ${{ runner.os }}-venv-
+      - name: install AMT deps
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          # Added torchcodec to the list
+          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm yt-dlp
+      - name: Cache Virtual Env
+        id: cache-audiosep
+        uses: actions/cache@v4
+        with:
+          path: audiosep
+          # Change 'v1' to 'v2' if you change your pip install command later
+          key: ${{ runner.os }}-audiosep-v1-audio-separator
+
+      - name: Install Dependencies
+        # This step is SKIPPED if the cache is found!
+        if: steps.cache-audiosep.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss! Installing dependencies..."
+          python -m audiosep audiosep
+          source audiosep/bin/activate
+          pip install "audio-separator[cpu]"
+      - name: Add venv to PATH
+        run: |
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/audiosep/bin" >> $GITHUB_PATH
+
+      #AUDIOSEPARATOR PART
+      - name: Run Audio Separator
+        run: |
+          ./audiosep/bin/audio-separator ./my/music.mp3 \
+            --output_format=MP3 \
+            --output_dir audiosep_output \
+            --model_filename model_bs_roformer_ep_317_sdr_12.9755.ckpt \
+            --custom_output_names='{"Vocals": "vocals_output", "Drums": "drums_output", "Instrumental": "instrumental_output", "Bass": "bass_output"}'
+
+      #MUSIC2MIDI PART
+      - name: downloading music2midi model
+        run: |
+          wget -O my/model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+      - name: Run script
+        shell: bash -el {0}
+        working-directory: ./my
+        env:
+          # Memberitahu Python agar melirik ke folder sebelah untuk mencari modul
+          PYTHONPATH: ${{ github.workspace }}/music2midi
+        run: |
+          pip uninstall -y pysoundfile
+          pip uninstall -y soundfile
+          pip install soundfile
+          python pianocombi.py
+
+      - name: Upload Piano Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Music2MIDI-Output  # Nama folder artifact di GitHub
+          path: |
+            my/midi.mid
+            my/audio.mp3
+
+
+      #AMT PART
+
+
+      - name: downloading AMT model
+        run: |
+          wget -P amt/models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
+
+      - name: executing AMT
+        working-directory: ./amt/
+        run: |
+          # No 'source' needed because we added .venv/bin to GITHUB_PATH
+          python -m infer ../audiosep_output/instrumental_output.mp3
+          ffmpeg -f fluidsynth -i output.mid -f mp3 output.mp3
+
+      - name: Upload Piano Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMT-MIDI-Output  # Nama folder artifact di GitHub
+          path: |
+            amt/output.mid
+            amt/output.mp3
+      
+      - name: Combine Audio Outputs
+        run: |
+          ffmpeg -i ./audiosep_output/vocals_output.mp3 -i ./amt/output.mp3 -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" -c:a libmp3lame -q:a 2 final_combined_output.mp3
+
+      - name: Final Combined Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: Final-Combined-Output  # Nama folder artifact di GitHub
+          path: final_combined_output.mp3
