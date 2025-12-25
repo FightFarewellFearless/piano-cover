@@ -93,35 +93,49 @@ jobs:
       # ------------------------------------------------------------------
       # LOGIKA KHUSUS: MUSIC2MIDI (Hanya jalan jika matrix == music2midi)
       # ------------------------------------------------------------------
-      - name: Checkout music2midi
-        if: matrix.model == 'music2midi'
-        uses: actions/checkout@v4
-        with:
-          repository: ytinyui/music2midi
-          path: music2midi
 
-      - name: Setup Micromamba (Music2Midi)
-        if: matrix.model == 'music2midi'
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: music2midi/environment.yaml
-          environment-name: music2midi
-          cache-environment: true
-          create-args: fluidsynth python=3.9 librosa
-
-      - name: Run Music2Midi Script
-        if: matrix.model == 'music2midi'
-        shell: bash -el {0}
-        working-directory: ./my
-        env:
-          PYTHONPATH: ${{ github.workspace }}/music2midi
+      - name: Installing basic pitch
+        run: pip install basic-pitch
+      - name: running basic-pitch to convert vocals to midi
         run: |
-          wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
-          pip uninstall -y pysoundfile soundfile
-          pip install soundfile
+          basic-pitch . ./audiosep_output/vocals_output.mp3 --minimum-note-length 100
+          mv vocals_output.mid my/midi.mid
+      - name: Converting to mp3
+        run: |
+          echo "Mendownload SoundFont Piano..."
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          timidity my/midi.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "my/audio.mp3"
+      # - name: Checkout music2midi
+      #   if: matrix.model == 'music2midi'
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: ytinyui/music2midi
+      #     path: music2midi
+
+      # - name: Setup Micromamba (Music2Midi)
+      #   if: matrix.model == 'music2midi'
+      #   uses: mamba-org/setup-micromamba@v2
+      #   with:
+      #     environment-file: music2midi/environment.yaml
+      #     environment-name: music2midi
+      #     cache-environment: true
+      #     create-args: fluidsynth python=3.9 librosa
+
+      # - name: Run Music2Midi Script
+      #   if: matrix.model == 'music2midi'
+      #   shell: bash -el {0}
+      #   working-directory: ./my
+      #   env:
+      #     PYTHONPATH: ${{ github.workspace }}/music2midi
+      #   run: |
+      #     wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+      #     pip uninstall -y pysoundfile soundfile
+      #     pip install soundfile
           
-          # Jalankan script (pastikan input file benar sesuai script pianocombi.py)
-          python pianocombi.py
+      #     # Jalankan script (pastikan input file benar sesuai script pianocombi.py)
+      #     python pianocombi.py
 
       # ------------------------------------------------------------------
       # LOGIKA KHUSUS: AMT (Hanya jalan jika matrix == amt)
@@ -146,7 +160,10 @@ jobs:
           
           # Proses instrumental dari artifact job sebelumnya
           python -m infer ../audiosep_output/instrumental_output.mp3
-          timidity output.mid -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
+          echo "Mendownload SoundFont Piano..."
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          timidity output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL (Dinamis sesuai nama matrix)
