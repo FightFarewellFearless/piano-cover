@@ -127,7 +127,7 @@ jobs:
         working-directory: ./amt/
         run: |
           sudo apt install timidity
-          # No 'source' needed because we added .venv/bin to GITHUB_PATH
+          source ../.venv/bin/activate
           python -m infer ../audiosep_output/instrumental_output.mp3
           timidity output.mid -Ow -o - | ffmpeg -i - -acodec libmp3lame -ab 192k output.mp3
 
