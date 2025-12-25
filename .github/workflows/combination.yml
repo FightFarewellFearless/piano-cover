@@ -141,7 +141,7 @@ jobs:
       
       - name: Combine Audio Outputs
         run: |
-          ffmpeg -i ./audiosep_output/vocals_output.mp3 -i ./amt/output.mp3 -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" -c:a libmp3lame -q:a 2 final_combined_output.mp3
+          ffmpeg -i ./my/audio.mp3 -i ./amt/output.mp3 -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" -c:a libmp3lame -q:a 2 final_combined_output.mp3
 
       - name: Final Combined Output
         uses: actions/upload-artifact@v4
