@@ -7,63 +7,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    #   # 1. Install System Dependencies
-    #   - name: install system deps
-    #     run: |
-    #       sudo apt-get update
-    #       sudo apt-get install -y ffmpeg
+      # 1. Install System Dependencies (REQUIRED for MP3 decoding)
+      - name: install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-    # 2. Checkout Repo Musik2Midi (Hanya untuk ambil environment.yaml)
       - name: Checkout
         uses: actions/checkout@v4
         with:
           repository: misya11p/amt-apc
-          path: amt  # Diletakkan di folder khusus
+          path: amt
 
-      # 3. Checkout Repo Anda Sendiri (Tempat piano.py berada)
       - name: Checkout own repo
         uses: actions/checkout@v4
         with:
-          path: my       # Diletakkan di folder berbeda agar tidak bentrok
+          path: my
 
       - name: Cache Virtual Environment
         id: cache-venv
         uses: actions/cache@v4
         with:
           path: .venv
-          # The key uses a hash of your dependency file; if the file changes, the cache misses.
           key: ${{ runner.os }}-venv-1
           restore-keys: |
             ${{ runner.os }}-venv-
+
       - name: install deps
         if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install torch torchaudio soundfile pretty-midi tqdm
+          # Added torchcodec to the list
+          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm
 
-      # - name: Force Update Soundfile
-      #   shell: bash -el {0}
-      #   run: |
-      #     # Pastikan menggunakan versi >= 0.11.0
-      #     pip install --upgrade soundfile
-      # 5. Download Model (Masukkan ke dalam folder repo Anda agar terbaca piano.py)
       - name: downloading model
         run: |
           wget -P amt/models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
-
-      # 6. Eksekusi skrip di dalam folder repo Anda
-      # - name: Run script
-      #   shell: bash -el {0}
-      #   working-directory: ./my_project # Pindah ke folder repo Anda
-      #   env:
-      #     # Memberitahu Python agar melirik ke folder sebelah untuk mencari modul
-      #     PYTHONPATH: ${{ github.workspace }}/music2midi_deps
-      #   run: |
-      #     pip uninstall -y pysoundfile
-      #     pip uninstall -y soundfile
-      #     pip install soundfile
-      #     python piano.py
 
       - name: Add venv to PATH
         run: echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
@@ -71,11 +51,11 @@ jobs:
       - name: executing
         working-directory: ./amt/
         run: |
-          python infer ../my/music.mp3
+          # No 'source' needed because we added .venv/bin to GITHUB_PATH
+          python -m infer ../my/music.mp3
 
       - name: Upload Piano Results
         uses: actions/upload-artifact@v4
         with:
-          name: converted-midi-and-audio  # Nama folder artifact di GitHub
-          path: |
-            amt/output.mid
+          name: converted-midi-and-audio
+          path: amt/output.mid
