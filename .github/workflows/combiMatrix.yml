@@ -31,6 +31,10 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Install Audio Separator
         run: |
           pip install "audio-separator[cpu]"
