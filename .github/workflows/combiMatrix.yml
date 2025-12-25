@@ -1,0 +1,209 @@
+name: Combi Matrix
+on:
+  workflow_dispatch:
+
+jobs:
+  # ==============================================================================
+  # JOB 1: PRE-PROCESSING (Audio Separator)
+  # Menyiapkan file vokal dan instrumental untuk diproses job selanjutnya
+  # ==============================================================================
+  prepare_stems:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Checkout own repo
+        uses: actions/checkout@v4
+        with:
+          path: my
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Audio Separator
+        run: |
+          pip install "audio-separator[cpu]"
+          # Hapus cache pip agar hemat storage
+          pip cache purge
+
+      - name: Run Audio Separator
+        run: |
+          mkdir audiosep_output
+          audio-separator ./my/music.mp3 \
+            --output_format=MP3 \
+            --output_dir audiosep_output \
+            --model_filename UVR-MDX-NET-Inst_HQ_4.onnx \
+            --custom_output_names='{"Vocals": "vocals_output", "Drums": "drums_output", "Instrumental": "instrumental_output", "Bass": "bass_output"}'
+
+      - name: Upload Stems Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stems-output
+          path: audiosep_output
+
+  # ==============================================================================
+  # JOB 2: PROCESSING (MATRIX)
+  # Menjalankan Music2Midi dan AMT secara PARALEL (Bersamaan di 2 VM berbeda)
+  # ==============================================================================
+  generate:
+    needs: prepare_stems
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [music2midi, amt] # <--- INI ADALAH MATRIXNYA
+
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Checkout own repo
+        uses: actions/checkout@v4
+        with:
+          path: my
+
+      - name: Download Stems
+        uses: actions/download-artifact@v4
+        with:
+          name: stems-output
+          path: audiosep_output
+
+      # ------------------------------------------------------------------
+      # LOGIKA KHUSUS: MUSIC2MIDI (Hanya jalan jika matrix == music2midi)
+      # ------------------------------------------------------------------
+      - name: Checkout music2midi
+        if: matrix.model == 'music2midi'
+        uses: actions/checkout@v4
+        with:
+          repository: ytinyui/music2midi
+          path: music2midi
+
+      - name: Setup Micromamba (Music2Midi)
+        if: matrix.model == 'music2midi'
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: music2midi/environment.yaml
+          environment-name: music2midi
+          cache-environment: true
+          create-args: fluidsynth python=3.9 librosa
+
+      - name: Run Music2Midi Script
+        if: matrix.model == 'music2midi'
+        shell: bash -el {0}
+        working-directory: ./my
+        env:
+          PYTHONPATH: ${{ github.workspace }}/music2midi
+        run: |
+          wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+          pip uninstall -y pysoundfile soundfile
+          pip install soundfile
+          
+          # Jalankan script (pastikan input file benar sesuai script pianocombi.py)
+          python pianocombi.py
+
+      # ------------------------------------------------------------------
+      # LOGIKA KHUSUS: AMT (Hanya jalan jika matrix == amt)
+      # ------------------------------------------------------------------
+      - name: Checkout AMT
+        if: matrix.model == 'amt'
+        uses: actions/checkout@v4
+        with:
+          repository: misya11p/amt-apc
+          path: amt
+
+      - name: Setup Python (AMT)
+        if: matrix.model == 'amt'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Run AMT Script
+        if: matrix.model == 'amt'
+        working-directory: ./amt/
+        run: |
+          # Install Dependencies Heavy (Torch)
+          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm yt-dlp
+          pip cache purge # Hemat space
+          
+          wget -P models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
+          
+          # Proses instrumental dari artifact job sebelumnya
+          python -m infer ../audiosep_output/instrumental_output.mp3
+          ffmpeg -f fluidsynth -i output.mid -f mp3 output.mp3
+
+      # ------------------------------------------------------------------
+      # UPLOAD HASIL (Dinamis sesuai nama matrix)
+      # ------------------------------------------------------------------
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-${{ matrix.model }}
+          path: |
+            my/midi.mid
+            my/audio.mp3
+            amt/output.mid
+            amt/output.mp3
+          if-no-files-found: ignore
+
+  # ==============================================================================
+  # JOB 3: COMBINE (Post-Processing)
+  # Menggabungkan Vocals (Job 1) + Hasil AMT (Job 2)
+  # ==============================================================================
+  finalize:
+    needs: generate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      # Ambil Vocals
+      - name: Download Stems
+        uses: actions/download-artifact@v4
+        with:
+          name: stems-output
+          path: stems
+
+      # Ambil Hasil AMT
+      - name: Download AMT Output
+        uses: actions/download-artifact@v4
+        with:
+          name: output-amt
+          path: amt_result
+
+      # Gabungkan (Sesuai logika kode asli Anda: Vocal + AMT)
+      - name: Combine Audio Outputs
+        run: |
+          # Perhatikan path inputnya disesuaikan dengan folder download artifact
+          ffmpeg -i ./stems/vocals_output.mp3 \
+                 -i ./amt_result/amt/output.mp3 \
+                 -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" \
+                 -c:a libmp3lame -q:a 2 final_combined_output.mp3
+
+      - name: Final Output Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Final-Combined-Output
+          path: final_combined_output.mp3
