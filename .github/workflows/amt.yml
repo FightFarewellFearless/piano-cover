@@ -52,7 +52,7 @@ jobs:
         working-directory: ./amt/
         run: |
           # No 'source' needed because we added .venv/bin to GITHUB_PATH
-          python -m infer -s level1 ../my/music.mp3
+          python -m infer ../my/music.mp3
 
       - name: Upload Piano Results
         uses: actions/upload-artifact@v4
