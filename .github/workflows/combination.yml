@@ -129,7 +129,7 @@ jobs:
           sudo apt install timidity
           source ../.venv/bin/activate
           python -m infer ../audiosep_output/instrumental_output.mp3
-          timidity output.mid -Ow -o - | ffmpeg -i - -acodec libmp3lame -ab 192k output.mp3
+          timidity output.mid -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
 
       - name: Upload Piano Results
         uses: actions/upload-artifact@v4
