@@ -112,13 +112,17 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install "numpy<2"
-          pip install basic-pitch
+          # pip install basic-pitch
+          pip install omnizart
+          # Download the checkpoints
+          omnizart download-checkpoints
           pip install mido
       - name: running basic-pitch to convert vocals to midi
         if: matrix.model == 'music2midi'
         run: |
-          basic-pitch . ./audiosep_output/vocals_output.mp3 --onset-threshold 0.6 --frame-threshold 0.4
-          mv vocals_output_basic_pitch.mid my/vocal.mid
+          # basic-pitch . ./audiosep_output/vocals_output.mp3
+          # mv vocals_output_basic_pitch.mid my/vocal.mid
+          omnizart vocal transcribe ./audiosep_output/vocals_output.mp3 -o ./my/vocal.mid
           python ./my/clean_piano.py ./my/vocal.mid ./my/midi.mid
       - name: Converting to mp3
         if: matrix.model == 'music2midi'
