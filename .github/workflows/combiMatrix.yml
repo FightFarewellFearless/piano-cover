@@ -42,7 +42,7 @@ jobs:
           audio-separator ./my/music.mp3 \
             --output_format=MP3 \
             --output_dir audiosep_output \
-            --model_filename model_bs_roformer_ep_317_sdr_12.9755.ckpt \
+            --model_filename UVR-MDX-NET-Inst_HQ_4.onnx \
             --custom_output_names='{"Vocals": "vocals_output", "Drums": "drums_output", "Instrumental": "instrumental_output", "Bass": "bass_output"}'
 
       - name: Upload Stems Artifact
