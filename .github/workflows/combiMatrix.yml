@@ -117,7 +117,7 @@ jobs:
       - name: running basic-pitch to convert vocals to midi
         if: matrix.model == 'music2midi'
         run: |
-          basic-pitch . ./audiosep_output/vocals_output.mp3
+          basic-pitch . ./audiosep_output/vocals_output.mp3 --onset-threshold 0.6 --frame-threshold 0.4
           mv vocals_output_basic_pitch.mid my/vocal.mid
           python ./my/clean_piano.py ./my/vocal.mid ./my/midi.mid
       - name: Converting to mp3
@@ -233,7 +233,7 @@ jobs:
       - name: Combine Audio Outputs
         run: |
           pip install pretty_midi
-          python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 4 --keep_sustain
+          python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 5 --keep_sustain
           echo "Mendownload SoundFont Piano..."
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
           unzip FluidR3_GM.zip
