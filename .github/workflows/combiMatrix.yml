@@ -110,7 +110,7 @@ jobs:
         run: |
           wget -P models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
           echo "Mendownload SoundFont Piano..."
-          wget -O SalC5Light2.zip https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download
+          wget -O SalC5Light2.zip "https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download"
           unzip SalC5Light2.zip
 
       # ------------------------------------------------------------------
