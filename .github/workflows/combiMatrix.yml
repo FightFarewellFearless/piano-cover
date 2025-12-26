@@ -211,7 +211,10 @@ jobs:
     steps:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
+      - name: Checkout own repo
+        uses: actions/checkout@v4
+        with:
+          path: my
       # Ambil Vocals piano
       - name: Download Stems
         uses: actions/download-artifact@v4
@@ -229,11 +232,19 @@ jobs:
       # Gabungkan (Sesuai logika kode asli Anda: Vocal + AMT)
       - name: Combine Audio Outputs
         run: |
+          pip install pretty_midi
+          python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.midi --max_poly 4 
+          echo "Mendownload SoundFont Piano..."
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          sudo apt install timidity
+          timidity final_clean.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
           # Perhatikan path inputnya disesuaikan dengan folder download artifact
-          ffmpeg -i ./music2midi/my/audio.mp3 \
-                 -i ./amt_result/amt/output.mp3 \
-                 -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" \
-                 -c:a libmp3lame -q:a 2 final_combined_output.mp3
+          # ffmpeg -i ./music2midi/my/audio.mp3 \
+          #       -i ./amt_result/amt/output.mp3 \
+          #       -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" \
+          #       -c:a libmp3lame -q:a 2 final_combined_output.mp3
 
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
