@@ -233,7 +233,7 @@ jobs:
       - name: Combine Audio Outputs
         run: |
           pip install pretty_midi
-          python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.midi --max_poly 4 
+          python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 4 
           echo "Mendownload SoundFont Piano..."
           wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
           unzip FluidR3_GM.zip
