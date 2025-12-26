@@ -156,8 +156,8 @@ def main():
     parser.add_argument("--double_vocal", action='store_true', default=True, help="Aktifkan penebalan vokal (Default: True)")
     
     parser.add_argument("--max_poly", type=int, default=3, help="Rekomendasi naik ke 3 karena Bass sekarang aman")
-    parser.add_argument("--vol_vocal", type=int, default=110)
-    parser.add_argument("--vol_instr", type=int, default=70) # Naikkan volume instrumen sedikit
+    parser.add_argument("--vol_vocal", type=int, default=100)
+    parser.add_argument("--vol_instr", type=int, default=85) # Naikkan volume instrumen sedikit
     parser.add_argument("--shift_vocal", type=int, default=1)
     parser.add_argument("--shift_instr", type=int, default=-1)
     parser.add_argument("--keep_sustain", action='store_true')
