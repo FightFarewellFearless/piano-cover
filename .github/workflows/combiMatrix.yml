@@ -110,8 +110,8 @@ jobs:
         run: |
           wget -P models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
           echo "Mendownload SoundFont Piano..."
-          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
-          unzip FluidR3_GM.zip
+          wget -O SalC5Light2.zip https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download
+          unzip SalC5Light2.zip
 
       # ------------------------------------------------------------------
       # PROSES INFERENCE (BEDAKAN INPUT & STYLE BERDASARKAN MATRIX)
@@ -149,8 +149,8 @@ jobs:
           python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
           
           # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          timidity ./my/midi.mid --force-program=0 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "./my/audio.mp3"
+          timidity ./my/midi.mid --force-program=0 -x "soundfont ./amt/SalC5Light2.sf2" -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "./my/audio.mp3"
 
       # ------------------------------------------------------------------
       # KHUSUS INSTRUMENTAL (AMT): RENDER LANGSUNG
@@ -160,8 +160,8 @@ jobs:
         working-directory: ./amt/
         run: |
           # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          timidity output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "output.mp3"
+          timidity output.mid -x "soundfont SalC5Light2.sf2" -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "output.mp3"
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL
@@ -217,12 +217,12 @@ jobs:
           python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 5
           
           echo "Mendownload SoundFont Piano..."
-          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
-          unzip FluidR3_GM.zip
-          
+          wget -O SalC5Light2.zip https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download
+          unzip SalC5Light2.zip
+
           # Render MIDI gabungan
-          timidity final_clean.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
+          timidity final_clean.mid --force-program=0 -x "soundfont SalC5Light2.sf2" -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
 
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
