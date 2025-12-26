@@ -110,9 +110,10 @@ jobs:
       - name: Installing basic pitch
         if: matrix.model == 'music2midi'
         run: |
-          pip install --upgrade pip
+          pip install --upgrade pip setuptools wheel
+          pip install "numpy<2" Cython
+          pip install --no-build-isolation madmom
           sudo apt-get install libsndfile-dev fluidsynth
-          pip install Cython numpy
           # pip install basic-pitch
           pip install omnizart
           # Download the checkpoints
