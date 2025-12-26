@@ -111,8 +111,8 @@ jobs:
         if: matrix.model == 'music2midi'
         run: |
           pip install --upgrade pip
-          sudo apt-get install libsndfile-dev fluidsynth ffmpeg
-          pip install Cython "numpy<2"
+          sudo apt-get install libsndfile-dev fluidsynth
+          pip install Cython numpy
           # pip install basic-pitch
           pip install omnizart
           # Download the checkpoints
