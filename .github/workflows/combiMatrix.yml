@@ -114,22 +114,26 @@ jobs:
           unzip FluidR3_GM.zip
 
       # ------------------------------------------------------------------
-      # PROSES INFERENCE (BEDAKAN INPUT BERDASARKAN MATRIX)
+      # PROSES INFERENCE (BEDAKAN INPUT & STYLE BERDASARKAN MATRIX)
       # ------------------------------------------------------------------
       - name: Run AMT Inference
         working-directory: ./amt/
         run: |
-          # Tentukan Input File berdasarkan Matrix
+          # Default kosong
+          EXTRA_FLAGS=""
+
+          # Logika If/Else
           if [ "${{ matrix.model }}" == "music2midi" ]; then
             INPUT_FILE="../audiosep_output/vocals_output.mp3"
-            echo "Processing VOCALS with AMT..."
+            EXTRA_FLAGS="--style level1"
+            echo "Processing VOCALS with AMT (Style: Level 1)..."
           else
             INPUT_FILE="../audiosep_output/instrumental_output.mp3"
             echo "Processing INSTRUMENTAL with AMT..."
           fi
           
-          # Jalankan Inference
-          python -m infer "$INPUT_FILE"
+          # Jalankan Inference (Variabel EXTRA_FLAGS akan otomatis masuk jika ada isinya)
+          python -m infer "$INPUT_FILE" $EXTRA_FLAGS
 
       # ------------------------------------------------------------------
       # KHUSUS VOCAL (Music2Midi): CLEANING
