@@ -5,6 +5,7 @@ on:
 jobs:
   # ==============================================================================
   # JOB 1: PRE-PROCESSING (Audio Separator)
+  # Menyiapkan file vokal dan instrumental untuk diproses job selanjutnya
   # ==============================================================================
   prepare_stems:
     runs-on: ubuntu-latest
@@ -32,6 +33,7 @@ jobs:
       - name: Install Audio Separator
         run: |
           pip install "audio-separator[cpu]"
+          # Hapus cache pip agar hemat storage
           pip cache purge
 
       - name: Run Audio Separator
@@ -51,7 +53,7 @@ jobs:
 
   # ==============================================================================
   # JOB 2: PROCESSING (MATRIX)
-  # Keduanya sekarang menggunakan AMT, hanya beda input file
+  # Menjalankan Music2Midi dan AMT secara PARALEL (Bersamaan di 2 VM berbeda)
   # ==============================================================================
   generate:
     needs: prepare_stems
@@ -59,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [music2midi, amt] # music2midi = Vocals, amt = Instrumental
+        model: [music2midi, amt] # <--- INI ADALAH MATRIXNYA
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -73,22 +75,14 @@ jobs:
           docker-images: true
           swap-storage: false
 
-      - name: Install FFmpeg & Timidity
+      - name: Install FFmpeg
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg timidity
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      # Checkout repo sendiri untuk script cleaning
       - name: Checkout own repo
         uses: actions/checkout@v4
         with:
           path: my
-
-      # Checkout repo AMT
-      - name: Checkout AMT
-        uses: actions/checkout@v4
-        with:
-          repository: misya11p/amt-apc
-          path: amt
 
       - name: Download Stems
         uses: actions/download-artifact@v4
@@ -97,74 +91,104 @@ jobs:
           path: audiosep_output
 
       # ------------------------------------------------------------------
-      # SETUP LINGKUNGAN (SAMA UNTUK KEDUANYA)
+      # LOGIKA KHUSUS: MUSIC2MIDI (Hanya jalan jika matrix == music2midi)
       # ------------------------------------------------------------------
-      - name: Install Dependencies (Torch & AMT Requirements)
-        run: |
-          # Install Dependencies Heavy (Torch)
-          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm yt-dlp mido
-          pip cache purge
 
-      - name: Download Model & SoundFont
-        working-directory: ./amt/
-        run: |
-          wget -P models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
-          echo "Mendownload SoundFont Piano..."
-          wget -O SalC5Light2.zip "https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download"
-          unzip SalC5Light2.zip
-
-      # ------------------------------------------------------------------
-      # PROSES INFERENCE (BEDAKAN INPUT & STYLE BERDASARKAN MATRIX)
-      # ------------------------------------------------------------------
-      - name: Run AMT Inference
-        working-directory: ./amt/
-        run: |
-          # Default kosong
-          EXTRA_FLAGS=""
-
-          # Logika If/Else
-          if [ "${{ matrix.model }}" == "music2midi" ]; then
-            INPUT_FILE="../audiosep_output/vocals_output.mp3"
-            EXTRA_FLAGS="--style level1"
-            echo "Processing VOCALS with AMT (Style: Level 1)..."
-          else
-            INPUT_FILE="../audiosep_output/instrumental_output.mp3"
-            echo "Processing INSTRUMENTAL with AMT..."
-          fi
-          
-          # Jalankan Inference (Variabel EXTRA_FLAGS akan otomatis masuk jika ada isinya)
-          python -m infer "$INPUT_FILE" $EXTRA_FLAGS
-
-      # ------------------------------------------------------------------
-      # KHUSUS VOCAL (Music2Midi): CLEANING
-      # Kita rapikan hasil MIDI vokal agar tidak terlalu berantakan
-      # ------------------------------------------------------------------
-      - name: Clean Vocal MIDI (Only for music2midi)
+      - name: Create requirements.txt
         if: matrix.model == 'music2midi'
         run: |
-          # Pindahkan output mentah AMT ke folder my untuk diproses cleaning
-          mv ./amt/output.mid ./my/raw_vocal.mid
+          # KITA WAJIB MEMAKSA NUMPY < 2 AGAR BASIC-PITCH TIDAK CRASH
+          echo "numpy<2" > requirements.txt
+          echo "basic-pitch" >> requirements.txt
+
+      - name: Set up Python 3.10
+        if: matrix.model == 'music2midi'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Installing basic pitch
+        if: matrix.model == 'music2midi'
+        run: |
+          pip install --upgrade pip
+          pip install "numpy<2"
+          pip install basic-pitch
+          pip install mido
+      - name: running basic-pitch to convert vocals to midi
+        if: matrix.model == 'music2midi'
+        run: |
+          basic-pitch . ./audiosep_output/vocals_output.mp3 --onset-threshold 0.6 --frame-threshold 0.4
+          mv vocals_output_basic_pitch.mid my/vocal.mid
+          python ./my/clean_piano.py ./my/vocal.mid ./my/midi.mid
+      - name: Converting to mp3
+        if: matrix.model == 'music2midi'
+        run: |
+          echo "Mendownload SoundFont Piano..."
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          sudo apt install timidity
+          timidity my/midi.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "my/audio.mp3"
+      # - name: Checkout music2midi
+      #   if: matrix.model == 'music2midi'
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: ytinyui/music2midi
+      #     path: music2midi
+
+      # - name: Setup Micromamba (Music2Midi)
+      #   if: matrix.model == 'music2midi'
+      #   uses: mamba-org/setup-micromamba@v2
+      #   with:
+      #     environment-file: music2midi/environment.yaml
+      #     environment-name: music2midi
+      #     cache-environment: true
+      #     create-args: fluidsynth python=3.9 librosa
+
+      # - name: Run Music2Midi Script
+      #   if: matrix.model == 'music2midi'
+      #   shell: bash -el {0}
+      #   working-directory: ./my
+      #   env:
+      #     PYTHONPATH: ${{ github.workspace }}/music2midi
+      #   run: |
+      #     wget -O model.ckpt https://github.com/ytinyui/music2midi/releases/download/0.1.0/epoch.799-step.119200.ckpt
+      #     pip uninstall -y pysoundfile soundfile
+      #     pip install soundfile
           
-          # Jalankan script clean_piano.py Anda
-          python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
-          
-          # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          timidity ./my/midi.mid --force-program=0 -x "soundfont ./amt/SalC5Light2.sf2" -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "./my/audio.mp3"
+      #     # Jalankan script (pastikan input file benar sesuai script pianocombi.py)
+      #     python pianocombi.py
 
       # ------------------------------------------------------------------
-      # KHUSUS INSTRUMENTAL (AMT): RENDER LANGSUNG
+      # LOGIKA KHUSUS: AMT (Hanya jalan jika matrix == amt)
       # ------------------------------------------------------------------
-      - name: Process Instrumental Output (Only for amt)
+      - name: Checkout AMT
+        if: matrix.model == 'amt'
+        uses: actions/checkout@v4
+        with:
+          repository: misya11p/amt-apc
+          path: amt
+
+      - name: Run AMT Script
         if: matrix.model == 'amt'
         working-directory: ./amt/
         run: |
-          # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          timidity output.mid -x "soundfont SalC5Light2.sf2" -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "output.mp3"
+          sudo apt install timidity
+          # Install Dependencies Heavy (Torch)
+          pip install torch torchaudio torchcodec soundfile pretty-midi tqdm yt-dlp
+          pip cache purge # Hemat space
+          
+          wget -P models/params/ https://github.com/misya11p/amt-apc/releases/download/beta/apc.pth
+          
+          # Proses instrumental dari artifact job sebelumnya
+          python -m infer ../audiosep_output/instrumental_output.mp3
+          echo "Mendownload SoundFont Piano..."
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          timidity output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | ffmpeg -i - -af loudnorm -acodec libmp3lame -ab 192k output.mp3
 
       # ------------------------------------------------------------------
-      # UPLOAD HASIL
+      # UPLOAD HASIL (Dinamis sesuai nama matrix)
       # ------------------------------------------------------------------
       - name: Upload Result
         uses: actions/upload-artifact@v4
@@ -179,50 +203,48 @@ jobs:
 
   # ==============================================================================
   # JOB 3: COMBINE (Post-Processing)
+  # Menggabungkan Vocals (Job 1) + Hasil AMT (Job 2)
   # ==============================================================================
   finalize:
     needs: generate
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg & Timidity
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg timidity
-      
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Checkout own repo
         uses: actions/checkout@v4
         with:
           path: my
-          
-      # Ambil Hasil Vocals (yang sudah diproses cleaning)
-      - name: Download Vocals Output
+      # Ambil Vocals piano
+      - name: Download Stems
         uses: actions/download-artifact@v4
         with:
           name: output-music2midi
           path: music2midi
 
-      # Ambil Hasil Instrumental
+      # Ambil Hasil AMT
       - name: Download AMT Output
         uses: actions/download-artifact@v4
         with:
           name: output-amt
           path: amt_result
 
-      # Gabungkan
+      # Gabungkan (Sesuai logika kode asli Anda: Vocal + AMT)
       - name: Combine Audio Outputs
         run: |
-          pip install pretty_midi mido
-          
-          # Input Vocal: dari folder music2midi/my/midi.mid
-          # Input Instrumen: dari folder amt_result/amt/output.mid
-          
+          pip install pretty_midi
           python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 5
-          
           echo "Mendownload SoundFont Piano..."
-          wget -O SalC5Light2.zip "https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download"
-          unzip SalC5Light2.zip
-
-          # Render MIDI gabungan
-          timidity final_clean.mid --force-program=0 -x "soundfont SalC5Light2.sf2" -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
+          wget https://keymusician01.s3.amazonaws.com/FluidR3_GM.zip
+          unzip FluidR3_GM.zip
+          sudo apt install timidity
+          timidity final_clean.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
+          # Perhatikan path inputnya disesuaikan dengan folder download artifact
+          # ffmpeg -i ./music2midi/my/audio.mp3 \
+          #       -i ./amt_result/amt/output.mp3 \
+          #       -filter_complex "[0:a][1:a]amix=inputs=2:duration=longest" \
+          #       -c:a libmp3lame -q:a 2 final_combined_output.mp3
 
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
