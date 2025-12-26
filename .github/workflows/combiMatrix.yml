@@ -217,7 +217,7 @@ jobs:
           python ./my/mergemidi.py --vocal ./music2midi/my/midi.mid --instr ./amt_result/amt/output.mid --max_poly 5
           
           echo "Mendownload SoundFont Piano..."
-          wget -O SalC5Light2.zip https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download
+          wget -O SalC5Light2.zip "https://drive.usercontent.google.com/uc?id=0B5gPxvwx-I4KWjZ2SHZOLU42dHM&export=download"
           unzip SalC5Light2.zip
 
           # Render MIDI gabungan
