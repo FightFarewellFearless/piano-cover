@@ -221,7 +221,7 @@ jobs:
           unzip FluidR3_GM.zip
           
           # Render MIDI gabungan
-          timidity final_clean.mid --force-program=0 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          timidity final_clean.mid --force-program=1 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
           ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
 
       - name: Final Output Artifact
