@@ -10,7 +10,7 @@ class MidiProcessor:
         # --- KONFIGURASI ---
         
         # 1. HAPUS NOISE: Not di bawah durasi ini dianggap 'sampah'
-        self.MIN_NOTE_DURATION = 60  # (sekitar not 1/32)
+        self.MIN_NOTE_DURATION = 40  # (sekitar not 1/32)
         
         # 2. LEM PEREKAT: Jarak maksimal antar not untuk bisa disambung
         self.MAX_MERGE_GAP = 120 
