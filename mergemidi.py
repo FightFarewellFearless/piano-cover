@@ -102,20 +102,22 @@ def select_best_notes(cluster, limit, keep_middle):
     selected_notes.sort(key=lambda x: x.pitch)
     return selected_notes
 
-def smart_simplify_instrument(midi_inst, vocal_inst, max_poly_active=3, max_poly_idle=10, min_duration=0.1):
+def smart_simplify_instrument(midi_inst, vocal_inst, max_poly_active=3, max_poly_idle=10, global_finger_limit=10, min_duration=0.1):
     """
-    Dynamic Polyphony:
-    - Vokal AKTIF: Limit not (clean)
-    - Vokal DIAM: Full power (fill)
+    Dynamic Polyphony dengan GLOBAL LIMITER.
+    Menjamin Total Not (Vokal + Instrumen) tidak pernah melebihi 10 jari manusia.
     """
-    print(f"   🧠 Smart Dynamic Filter: Active={max_poly_active}, Idle={max_poly_idle}...")
+    print(f"   🧠 Smart Dynamic Filter (Global Limit: {global_finger_limit} jari)...")
     
+    # 1. Mapping waktu vokal untuk pengecekan cepat
+    # Format: List of (start, end)
     vocal_intervals = []
-    buffer = 0.2  # Margin keamanan
+    buffer = 0.1 # Sedikit buffer agar transisi lebih mulus
     for vn in vocal_inst.notes:
         vocal_intervals.append((vn.start - buffer, vn.end + buffer))
         
     playable_notes = [n for n in midi_inst.notes if (n.end - n.start) >= min_duration]
+    # Sortir not instrumen
     path_notes = sorted(playable_notes, key=lambda x: x.start)
     final_notes = []
     
@@ -125,25 +127,55 @@ def smart_simplify_instrument(midi_inst, vocal_inst, max_poly_active=3, max_poly
 
     current_cluster = [path_notes[0]]
     
-    def get_dynamic_limit(cluster_start_time):
+    # --- FUNGSI BARU: Hitung beban vokal saat ini ---
+    def get_realtime_limit(cluster_start_time):
+        active_vocal_count = 0
+        is_vocal_active = False
+        
+        # Hitung berapa not vokal yang sedang bunyi di detik ini
         for v_start, v_end in vocal_intervals:
             if v_start <= cluster_start_time <= v_end:
-                return max_poly_active 
-        return max_poly_idle 
+                active_vocal_count += 1
+                is_vocal_active = True
+        
+        # Tentukan Target Mode (Santai vs Sibuk)
+        target_limit = max_poly_active if is_vocal_active else max_poly_idle
+        
+        # Hitung sisa jari yang tersedia
+        remaining_fingers = global_finger_limit - active_vocal_count
+        
+        # Safety: Jangan sampai limit negatif. Minimal sisakan 1 untuk Bass piano.
+        if remaining_fingers < 1:
+            remaining_fingers = 1
+            
+        # Limit akhir adalah yang TERKECIL antara Target Mode vs Sisa Jari
+        # Contoh: Vokal padat (4 not). Target Active (3). Sisa Jari (10-4=6).
+        # min(3, 6) -> 3. Aman.
+        # Contoh: Vokal SANGAT padat (9 not). Target Active (3). Sisa Jari (10-9=1).
+        # min(3, 1) -> 1. Piano mengalah, cuma main bass.
+        final_limit = min(target_limit, remaining_fingers)
+        
+        return final_limit
 
+    # Loop pemrosesan
     for i in range(1, len(path_notes)):
         note = path_notes[i]
         prev_note = path_notes[i-1]
         
+        # Grouping chord (toleransi 50ms)
         if abs(note.start - prev_note.start) < 0.05:
             current_cluster.append(note)
         else:
-            limit = get_dynamic_limit(current_cluster[0].start)
+            # Proses cluster sebelumnya
+            limit = get_realtime_limit(current_cluster[0].start)
             final_notes.extend(select_best_notes(current_cluster, limit, False))
+            
+            # Reset cluster baru
             current_cluster = [note]
             
+    # Proses sisa cluster terakhir
     if current_cluster:
-        limit = get_dynamic_limit(current_cluster[0].start)
+        limit = get_realtime_limit(current_cluster[0].start)
         final_notes.extend(select_best_notes(current_cluster, limit, False))
 
     midi_inst.notes = final_notes
