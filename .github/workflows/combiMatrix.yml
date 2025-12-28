@@ -149,7 +149,7 @@ jobs:
           python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
           
           # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          timidity ./my/midi.mid --force-program=0 -EFresamp=4 --reverb=15 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
+          timidity ./my/midi.mid --force-program=0 -EFresamp=4 --reverb=64 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
           ffmpeg -i - -c:a libmp3lame -q:a 2 "./my/audio.mp3"
 
       # ------------------------------------------------------------------
