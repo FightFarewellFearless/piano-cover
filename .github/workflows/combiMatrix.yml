@@ -160,7 +160,7 @@ jobs:
         working-directory: ./amt/
         run: |
           # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          timidity --force-program=0 -EFresamp=4 --reverb=15 output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          timidity --force-program=0 -EFresamp=4 --reverb=64 output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
           ffmpeg -i - -c:a libmp3lame -q:a 2 "output.mp3"
 
       # ------------------------------------------------------------------
@@ -221,7 +221,7 @@ jobs:
           unzip FluidR3_GM.zip
           
           # Render MIDI gabungan
-          timidity final_clean.mid -x "soundfont FluidR3_GM.sf2" --force-program=0 -EFresamp=4 --reverb=15 -Ow -o - | \
+          timidity final_clean.mid -x "soundfont FluidR3_GM.sf2" --force-program=0 -EFresamp=4 --reverb=64 -Ow -o - | \
           ffmpeg -i - -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
 
       - name: Final Output Artifact
