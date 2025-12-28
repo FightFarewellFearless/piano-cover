@@ -22,9 +22,10 @@ class MidiProcessor:
         # Ubah ke 960 jika ingin batasnya 2 ketuk.
         self.MAX_TOTAL_DURATION = 480 
         
-        # 4. VELOCITY
-        self.MIN_VELOCITY = 30
-        self.FIXED_VELOCITY = 85
+        # 4. VELOCITY (Clamp)
+        self.MIN_VELOCITY = 45   # batas bawah (hindari tipis)
+        self.MAX_VELOCITY = 90   # batas atas (hindari cempreng)
+
 
     def read_notes(self, track):
         """Mengubah event MIDI menjadi object Note absolut"""
@@ -98,12 +99,13 @@ class MidiProcessor:
             if self._is_valid(last_note):
                 cleaned_notes.append(last_note)
                 
-        # Normalisasi Velocity
+        # Velocity Clamp (lebih musikal, tidak cempreng)
         for note in cleaned_notes:
-            if note['velocity'] < self.MIN_VELOCITY:
-                note['velocity'] = self.FIXED_VELOCITY
-            else:
-                note['velocity'] = max(self.FIXED_VELOCITY, note['velocity'])
+            note['velocity'] = max(
+                self.MIN_VELOCITY,
+                min(note['velocity'], self.MAX_VELOCITY)
+            )
+
 
         return cleaned_notes
 
