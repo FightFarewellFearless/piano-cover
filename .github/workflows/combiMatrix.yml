@@ -149,7 +149,7 @@ jobs:
           python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
           
           # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          fluidsynth -ni ./amt/FluidR3_GM.sf2 ./my/midi.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "./my/audio.mp3" && rm temp.wav
+          fluidsynth -ni ./amt/FluidR3_GM.sf2 ./my/midi.mid -F temp.wav -r 44100 -g 0.7 -o synth.reverb.active=yes -o synth.reverb.room-size=0.65 -o synth.reverb.level=0.75 -o synth.reverb.damp=0.2 -o synth.reverb.width=10 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "./my/audio.mp3" && rm temp.wav
 
       # ------------------------------------------------------------------
       # KHUSUS INSTRUMENTAL (AMT): RENDER LANGSUNG
@@ -159,7 +159,7 @@ jobs:
         working-directory: ./amt/
         run: |
           # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          fluidsynth -ni FluidR3_GM.sf2 output.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "output.mp3" && rm temp.wav
+          fluidsynth -ni FluidR3_GM.sf2 output.mid -F temp.wav -r 44100 -g 0.7 -o synth.reverb.active=yes -o synth.reverb.room-size=0.65 -o synth.reverb.level=0.75 -o synth.reverb.damp=0.2 -o synth.reverb.width=10 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "output.mp3" && rm temp.wav
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL
@@ -219,7 +219,7 @@ jobs:
           unzip FluidR3_GM.zip
           
           # Render MIDI gabungan
-          fluidsynth -ni FluidR3_GM.sf2 final_clean.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "final_combined_output.mp3" && rm temp.wav
+          fluidsynth -ni FluidR3_GM.sf2 final_clean.mid -F temp.wav -r 44100 -g 0.7 -o synth.reverb.active=yes -o synth.reverb.room-size=0.65 -o synth.reverb.level=0.75 -o synth.reverb.damp=0.2 -o synth.reverb.width=10 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "final_combined_output.mp3" && rm temp.wav
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
         with:
