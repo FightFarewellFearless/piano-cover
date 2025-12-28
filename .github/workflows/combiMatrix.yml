@@ -233,7 +233,7 @@ jobs:
           wget -O MIDIVisualizer.zip https://github.com/kosua20/MIDIVisualizer/releases/download/v7.2/MIDIVisualizer-ubuntu20.zip
           unzip MIDIVisualizer.zip
           sudo apt install xorg-dev libgtk-3-dev libnotify-dev libasound2-dev xvfb -y
-          xvfb-run ./MIDIVisualizer --midi final_clean.mid --size 1920 1080 --export video.mp4 --format MPEG4
+          xvfb-run ./MIDIVisualizer --midi final_clean.mid --size 1920 1080 --export video.mp4 --format MPEG4 --framerate 30
           ffmpeg -i video.mp4 -i final_combined_output.mp3 -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 192k -shortest output.mp4
 
       - name: Upload Video Artifact
