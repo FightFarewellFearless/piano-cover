@@ -211,7 +211,7 @@ def main():
     
     parser.add_argument("--vol_vocal", type=int, default=100)
     parser.add_argument("--vol_instr", type=int, default=85)
-    parser.add_argument("--shift_vocal", type=int, default=1)
+    parser.add_argument("--shift_vocal", type=int, default=0)
     parser.add_argument("--shift_instr", type=int, default=-1)
     parser.add_argument("--min_dur", type=float, default=0.1)
     parser.add_argument("--tolerance", type=float, default=0.1)
