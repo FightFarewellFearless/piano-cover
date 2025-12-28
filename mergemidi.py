@@ -149,13 +149,24 @@ def smart_simplify_instrument(midi_inst, vocal_inst, max_poly_active=3, max_poly
 def adjust_track(midi_data, velocity, octave_shift, name):
     new_inst = pretty_midi.Instrument(program=0, name=name)
     if len(midi_data.instruments) > 0:
-        for note in midi_data.instruments[0].notes:
+        source_inst = midi_data.instruments[0]
+        
+        # 1. COPY NOTES
+        for note in source_inst.notes:
             shifted_pitch = note.pitch + (octave_shift * 12)
             if 0 <= shifted_pitch <= 127:
                 new_note = pretty_midi.Note(
                     velocity=velocity, pitch=shifted_pitch, start=note.start, end=note.end
                 )
                 new_inst.notes.append(new_note)
+        
+        # 2. [FIX PENTING] COPY CONTROL CHANGES (PEDAL SUSTAIN CC 64)
+        # Tanpa ini, suara piano akan putus-putus (staccato) dan kering.
+        new_inst.control_changes = source_inst.control_changes[:]
+        
+        # Juga copy Pitch Bend jika ada
+        new_inst.pitch_bends = source_inst.pitch_bends[:]
+        
     return new_inst
 
 def remove_conflicts_smart(melody_inst, chord_inst, time_tolerance=0.05, pitch_safety_gap=12):
@@ -197,10 +208,7 @@ def remove_conflicts_smart(melody_inst, chord_inst, time_tolerance=0.05, pitch_s
 
 def humanize_performance(midi_inst, strum_speed=0.015, timing_jitter=0.01, velocity_sigma=5):
     """
-    Mengubah MIDI Robot menjadi Manusia:
-    1. Strumming: Not dalam chord tidak bunyi bareng, tapi berurutan cepat.
-    2. Timing Jitter: Start dan End time digeser random sedikit.
-    3. Velocity Humanization: Kekuatan tekan bervariasi.
+    Mengubah MIDI Robot menjadi Manusia dengan menjaga SUSTAIN (Legato).
     """
     print(f"   ❤️  Applying Human Touch (Strumming, Jitter, Velocity)...")
     
@@ -209,29 +217,28 @@ def humanize_performance(midi_inst, strum_speed=0.015, timing_jitter=0.01, veloc
     
     humanized_notes = []
     
-    # Kelompokkan kembali menjadi chord untuk diproses strumming
     current_cluster = [notes[0]]
     
     def process_human_cluster(cluster):
-        # 1. STRUMMING LOGIC
-        # Urutkan dari pitch rendah ke tinggi
         cluster.sort(key=lambda x: x.pitch)
         
         cluster_size = len(cluster)
         for idx, note in enumerate(cluster):
-            # Strum delay
             strum_delay = 0
             if cluster_size > 1:
                 strum_delay = idx * strum_speed 
             
-            # 2. MICRO-TIMING JITTER
+            # Jitter Start Time
             start_drift = random.uniform(-timing_jitter, timing_jitter)
-            end_drift = random.uniform(-timing_jitter, timing_jitter * 2)
+            
+            # [FIX] Release Jitter dibuat lebih 'Positive' (Memanjang)
+            # Agar antar not lebih nyambung (Legato feel)
+            end_drift = random.uniform(0, timing_jitter * 3) 
             
             new_start = max(0, note.start + strum_delay + start_drift)
-            new_end = max(new_start + 0.1, note.end + strum_delay + end_drift)
+            new_end = max(new_start + 0.15, note.end + strum_delay + end_drift) # Min durasi dinaikkan sedikit
             
-            # 3. VELOCITY HUMANIZATION
+            # Velocity logic
             melody_accent = 5 if idx == cluster_size - 1 and cluster_size > 1 else 0
             base_vel = note.velocity
             random_vel = int(random.gauss(0, velocity_sigma))
@@ -268,6 +275,7 @@ def main():
     
     parser.add_argument("--vocal", required=True)
     parser.add_argument("--instr", required=True)
+    # [FIX] Mengembalikan default output ke nama semula
     parser.add_argument("--output", default="final_clean.mid")
     
     parser.add_argument("--double_vocal", action='store_true', default=True)
@@ -293,9 +301,9 @@ def main():
         print(f"❌ Error loading MIDI: {e}")
         return
 
-    print("🎹 Processing Grand Piano (Human Feel)...")
+    print("🎹 Processing Grand Piano (Human Feel + Sustain Fix)...")
 
-    # 1. Adjust Basic
+    # 1. Adjust Basic & [PENTING] Copy Sustain Pedal
     vocal_track = adjust_track(pm_vocal, args.vol_vocal, args.shift_vocal, "Melody")
     instr_track = adjust_track(pm_instr, args.vol_instr, args.shift_instr, "Accompaniment")
 
@@ -323,7 +331,7 @@ def main():
     final_midi.instruments.append(instr_track)
     
     final_midi.write(args.output)
-    print(f"✅ SUKSES! Output Humanized: {args.output}")
+    print(f"✅ SUKSES! Output: {args.output}")
 
 if __name__ == "__main__":
     main()
