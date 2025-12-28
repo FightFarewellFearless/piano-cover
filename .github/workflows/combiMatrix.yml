@@ -73,9 +73,9 @@ jobs:
           docker-images: true
           swap-storage: false
 
-      - name: Install FFmpeg & Timidity
+      - name: Install FFmpeg & fluidsynth
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg timidity
+          sudo apt-get update && sudo apt-get install -y ffmpeg fluidsynth
 
       # Checkout repo sendiri untuk script cleaning
       - name: Checkout own repo
@@ -149,8 +149,7 @@ jobs:
           python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
           
           # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          timidity ./my/midi.mid --force-program=0 -EFresamp=4 --reverb=64 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "./my/audio.mp3"
+          fluidsynth -ni ./amt/FluidR3_GM.sf2 ./my/midi.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "./my/audio.mp3" && rm temp.wav
 
       # ------------------------------------------------------------------
       # KHUSUS INSTRUMENTAL (AMT): RENDER LANGSUNG
@@ -160,8 +159,7 @@ jobs:
         working-directory: ./amt/
         run: |
           # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          timidity --force-program=0 -EFresamp=4 --reverb=64 output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "output.mp3"
+          fluidsynth -ni FluidR3_GM.sf2 output.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "output.mp3" && rm temp.wav
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL
@@ -184,9 +182,9 @@ jobs:
     needs: generate
     runs-on: ubuntu-latest
     steps:
-      - name: Install FFmpeg & Timidity
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg timidity
-      
+      - name: Install FFmpeg & Fluidsynth
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fluidsynth
+
       - name: Checkout own repo
         uses: actions/checkout@v4
         with:
@@ -221,9 +219,7 @@ jobs:
           unzip FluidR3_GM.zip
           
           # Render MIDI gabungan
-          timidity final_clean.mid -x "soundfont FluidR3_GM.sf2" --force-program=0 -EFresamp=4 --reverb=64 -Ow -o - | \
-          ffmpeg -i - -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
-
+          fluidsynth -ni FluidR3_GM.sf2 final_clean.mid -F temp.wav -r 44100 -g 0.7 && ffmpeg -i temp.wav -c:a libmp3lame -q:a 2 "final_combined_output.mp3" && rm temp.wav
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
         with:
