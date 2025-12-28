@@ -149,8 +149,8 @@ jobs:
           python ./my/clean_piano.py ./my/raw_vocal.mid ./my/midi.mid
           
           # Render audio dari MIDI yang SUDAH DIBERSIHKAN
-          timidity ./my/midi.mid --force-program=1 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "./my/audio.mp3"
+          timidity ./my/midi.mid --force-program=0 --lowpass=8000 --reverb=15 -x "soundfont ./amt/FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "./my/audio.mp3"
 
       # ------------------------------------------------------------------
       # KHUSUS INSTRUMENTAL (AMT): RENDER LANGSUNG
@@ -160,8 +160,8 @@ jobs:
         working-directory: ./amt/
         run: |
           # Render audio dari MIDI mentah AMT (Instrumental biasanya tidak perlu cleaning seagresif vokal)
-          timidity output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "output.mp3"
+          timidity --force-program=0 --lowpass=8000 --reverb=15 output.mid -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "output.mp3"
 
       # ------------------------------------------------------------------
       # UPLOAD HASIL
@@ -221,8 +221,8 @@ jobs:
           unzip FluidR3_GM.zip
           
           # Render MIDI gabungan
-          timidity final_clean.mid --force-program=1 -x "soundfont FluidR3_GM.sf2" -Ow -o - | \
-          ffmpeg -i - -af loudnorm -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
+          timidity final_clean.mid -x "soundfont FluidR3_GM.sf2" --force-program=0 --lowpass=8000 --reverb=15 -Ow -o - | \
+          ffmpeg -i - -c:a libmp3lame -q:a 2 "final_combined_output.mp3"
 
       - name: Final Output Artifact
         uses: actions/upload-artifact@v4
