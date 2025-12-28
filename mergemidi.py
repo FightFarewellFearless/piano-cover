@@ -268,7 +268,7 @@ def main():
     
     parser.add_argument("--vocal", required=True)
     parser.add_argument("--instr", required=True)
-    parser.add_argument("--output", default="final_humanized.mid")
+    parser.add_argument("--output", default="final_clean.mid")
     
     parser.add_argument("--double_vocal", action='store_true', default=True)
     parser.add_argument("--max_poly", type=int, default=3)
