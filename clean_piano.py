@@ -20,7 +20,7 @@ class MidiProcessor:
         # Jika not sudah sepanjang ini, berhenti menyambung dan buat not baru.
         # 480 ticks biasanya = 1 Ketuk (Quarter Note). 
         # Ubah ke 960 jika ingin batasnya 2 ketuk.
-        self.MAX_TOTAL_DURATION = 480 
+        self.MAX_TOTAL_DURATION = 960 
         
         # 4. VELOCITY (Clamp)
         self.MIN_VELOCITY = 45   # batas bawah (hindari tipis)
