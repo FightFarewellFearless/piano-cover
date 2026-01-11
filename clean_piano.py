@@ -10,7 +10,7 @@ class MidiProcessor:
         # --- KONFIGURASI (DIUBAH UNTUK VOKAL LEBIH HALUS) ---
         
         # 1. HAPUS NOISE
-        self.MIN_NOTE_DURATION = 40
+        self.MIN_NOTE_DURATION = 60
         
         # 2. LEM PEREKAT (Diperlonggar sedikit agar vokal lebih nyambung)
         self.MAX_MERGE_GAP = 180  # Naik dari 120 ke 180
@@ -19,13 +19,13 @@ class MidiProcessor:
         self.MAX_TOTAL_DURATION = 960 
         
         # 4. VELOCITY (Dibuat lebih lembut/soft)
-        self.MIN_VELOCITY = 60   # Naikkan batas bawah (agar vokal jelas/tebal)
+        self.MIN_VELOCITY = 65   # Naikkan batas bawah (agar vokal jelas/tebal)
         self.MAX_VELOCITY = 85   # Turunkan batas atas (agar tidak kasar/cempreng)
         
         # 5. LEGATO OVERLAP (BARU!)
         # Jumlah ticks not akan diperpanjang menabrak not berikutnya.
         # Ini kuncinya agar suara "ngalun" (tidak putus-putus).
-        self.LEGATO_AMOUNT = 30
+        self.LEGATO_AMOUNT = 40
 
 
     def read_notes(self, track):
