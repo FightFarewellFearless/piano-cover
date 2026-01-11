@@ -7,24 +7,25 @@ class MidiProcessor:
         self.input_path = Path(input_path)
         self.output_path = Path(output_path)
         
-        # --- KONFIGURASI ---
+        # --- KONFIGURASI (DIUBAH UNTUK VOKAL LEBIH HALUS) ---
         
-        # 1. HAPUS NOISE: Not di bawah durasi ini dianggap 'sampah'
-        self.MIN_NOTE_DURATION = 40  # (sekitar not 1/32)
+        # 1. HAPUS NOISE
+        self.MIN_NOTE_DURATION = 40
         
-        # 2. LEM PEREKAT: Jarak maksimal antar not untuk bisa disambung
-        self.MAX_MERGE_GAP = 120 
+        # 2. LEM PEREKAT (Diperlonggar sedikit agar vokal lebih nyambung)
+        self.MAX_MERGE_GAP = 180  # Naik dari 120 ke 180
         
-        # 3. GUNTING PEMBATAS (BARU!): 
-        # Batas maksimal panjang not hasil gabungan.
-        # Jika not sudah sepanjang ini, berhenti menyambung dan buat not baru.
-        # 480 ticks biasanya = 1 Ketuk (Quarter Note). 
-        # Ubah ke 960 jika ingin batasnya 2 ketuk.
+        # 3. BATAS PANJANG NOT
         self.MAX_TOTAL_DURATION = 960 
         
-        # 4. VELOCITY (Clamp)
-        self.MIN_VELOCITY = 45   # batas bawah (hindari tipis)
-        self.MAX_VELOCITY = 90   # batas atas (hindari cempreng)
+        # 4. VELOCITY (Dibuat lebih lembut/soft)
+        self.MIN_VELOCITY = 60   # Naikkan batas bawah (agar vokal jelas/tebal)
+        self.MAX_VELOCITY = 85   # Turunkan batas atas (agar tidak kasar/cempreng)
+        
+        # 5. LEGATO OVERLAP (BARU!)
+        # Jumlah ticks not akan diperpanjang menabrak not berikutnya.
+        # Ini kuncinya agar suara "ngalun" (tidak putus-putus).
+        self.LEGATO_AMOUNT = 30
 
 
     def read_notes(self, track):
@@ -49,32 +50,51 @@ class MidiProcessor:
         
         return notes
 
+    def _apply_legato(self, notes):
+        """
+        Membuat not sedikit tumpang tindih (overlap) dengan not berikutnya
+        jika jaraknya dekat. Ini menciptakan efek 'Legato' (nyambung).
+        """
+        if len(notes) < 2:
+            return notes
+            
+        for i in range(len(notes) - 1):
+            current_note = notes[i]
+            next_note = notes[i+1]
+            
+            # Hitung jarak antara akhir not sekarang dengan awal not depan
+            gap = next_note['start'] - current_note['end']
+            
+            # Jika jaraknya dekat (kurang dari 1 ketuk/480), kita sambung
+            # Tapi jangan sambung jika pitch-nya sama (karena sudah di-merge logic sebelumnya)
+            if gap < 480 and current_note['pitch'] != next_note['pitch']:
+                # Perpanjang not sekarang sampai not berikutnya mulai + overlap sedikit
+                new_end = next_note['start'] + self.LEGATO_AMOUNT
+                
+                # Pastikan tidak membuat not jadi super panjang (sanity check)
+                if new_end - current_note['start'] < self.MAX_TOTAL_DURATION + 200:
+                    current_note['end'] = new_end
+                    
+        return notes
+
     def process_notes(self, notes):
         if not notes: return []
 
-        # Urutkan not agar pembacaan urut dari awal lagu
+        # Urutkan not
         notes.sort(key=lambda x: x['start'])
         
-        cleaned_notes = []
+        merged_notes = []
         
         if notes:
-            # Ambil not pertama sebagai 'kandidat' yang sedang dibangun
+            # --- TAHAP 1: PENGGABUNGAN NOT SEJENIS (Sama Pitch) ---
             last_note = notes[0]
             
             for i in range(1, len(notes)):
                 current_note = notes[i]
-                
-                # Hitung Jarak (Gap)
                 gap = current_note['start'] - last_note['end']
-                
-                # Hitung Potensi Panjang Baru (Jika digabung)
                 potential_new_end = max(last_note['end'], current_note['end'])
                 potential_duration = potential_new_end - last_note['start']
                 
-                # --- SYARAT PENGGABUNGAN ---
-                # 1. Nada harus sama
-                # 2. Jarak (gap) dekat (bukan not yang berjauhan)
-                # 3. Durasi total belum melebihi batas (MAX_TOTAL_DURATION)
                 should_merge = (
                     (current_note['pitch'] == last_note['pitch']) and 
                     (0 <= gap <= self.MAX_MERGE_GAP) and
@@ -82,35 +102,32 @@ class MidiProcessor:
                 )
                 
                 if should_merge:
-                    # GABUNGKAN (Perpanjang not sebelumnya)
                     last_note['end'] = potential_new_end
-                    # Ambil velocity terbesar agar dinamis
-                    last_note['velocity'] = max(last_note['velocity'], current_note['velocity'])
-                    # 'current_note' kita abaikan karena sudah dilebur ke last_note
+                    # Ambil velocity rata-rata agar transisi volume halus (bukan max)
+                    last_note['velocity'] = int((last_note['velocity'] + current_note['velocity']) / 2)
                 else:
-                    # JANGAN GABUNG (Simpan not lama, mulai not baru)
                     if self._is_valid(last_note):
-                        cleaned_notes.append(last_note)
-                    
-                    # Jadikan not sekarang sebagai kandidat baru
+                        merged_notes.append(last_note)
                     last_note = current_note
             
-            # Jangan lupa simpan not terakhir yang tersisa di memori
             if self._is_valid(last_note):
-                cleaned_notes.append(last_note)
+                merged_notes.append(last_note)
+
+        # --- TAHAP 2: LEGATO & VELOCITY SMOOTHING ---
+        
+        # Terapkan Legato (antar not beda pitch)
+        final_notes = self._apply_legato(merged_notes)
                 
-        # Velocity Clamp (lebih musikal, tidak cempreng)
-        for note in cleaned_notes:
+        # Velocity Clamp
+        for note in final_notes:
             note['velocity'] = max(
                 self.MIN_VELOCITY,
                 min(note['velocity'], self.MAX_VELOCITY)
             )
 
-
-        return cleaned_notes
+        return final_notes
 
     def _is_valid(self, note):
-        """Filter not yang terlalu pendek (glitch)"""
         duration = note['end'] - note['start']
         return duration >= self.MIN_NOTE_DURATION
 
@@ -123,8 +140,10 @@ class MidiProcessor:
         for note in notes:
             events.append({'time': note['start'], 'type': 'note_on', 'note': note['pitch'], 'velocity': note['velocity']})
             events.append({'time': note['end'], 'type': 'note_off', 'note': note['pitch'], 'velocity': 0})
-            
-        events.sort(key=lambda x: x['time'])
+        
+        # Penting: Sort event berdasarkan waktu karena Legato mengubah end time
+        # sehingga urutan bisa saja sedikit bergeser (overlap)
+        events.sort(key=lambda x: (x['time'], 0 if x['type']=='note_off' else 1))
         
         last_time = 0
         for event in events:
@@ -147,17 +166,17 @@ class MidiProcessor:
             mid = mido.MidiFile(self.input_path)
             new_mid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
             
-            print(f"--> Processing: {self.input_path.name}")
+            print(f"--> Processing Vokal Halus: {self.input_path.name}")
             
-            # Auto-scale parameter berdasarkan resolusi MIDI (Ticks Per Beat)
-            # Default asumsi 480 ticks/beat
             scale = mid.ticks_per_beat / 480.0
             
+            # Scale parameter
             self.MIN_NOTE_DURATION = int(self.MIN_NOTE_DURATION * scale)
             self.MAX_MERGE_GAP = int(self.MAX_MERGE_GAP * scale)
             self.MAX_TOTAL_DURATION = int(self.MAX_TOTAL_DURATION * scale)
+            self.LEGATO_AMOUNT = int(self.LEGATO_AMOUNT * scale)
 
-            print(f"    Settings (scaled): MinDur={self.MIN_NOTE_DURATION}, MaxGap={self.MAX_MERGE_GAP}, MaxLen={self.MAX_TOTAL_DURATION}")
+            print(f"    Settings: MergeGap={self.MAX_MERGE_GAP}, LegatoOverlap={self.LEGATO_AMOUNT}")
 
             for i, track in enumerate(mid.tracks):
                 has_notes = any(msg.type == 'note_on' for msg in track)
@@ -168,7 +187,6 @@ class MidiProcessor:
                     new_track = self.write_track(cleaned_notes)
                     new_mid.tracks.append(new_track)
                 else:
-                    # Copy Meta Track (Tempo dll) tapi bersihkan CC
                     clean_meta = mido.MidiTrack()
                     for msg in track:
                         if msg.type not in ['control_change', 'pitchwheel', 'aftertouch']:
