@@ -318,11 +318,11 @@ def main():
     
     # 5. AUTO SUSTAIN (LEGATO)
     # Ini akan menyambung not-not instrumen yang terputus agar mengalun
-    instr_track = apply_fake_sustain(instr_track, max_stretch=1.2)
+    instr_track = apply_fake_sustain(instr_track, max_stretch=1.8)
     
     # 6. HUMANIZER
     # Memberikan sedikit ketidaksempurnaan pada waktu dan tekanan agar tidak robotik
-    instr_track = humanize_track(instr_track, timing_jitter=0.015, vel_jitter=8)
+    instr_track = humanize_track(instr_track, timing_jitter=0.005, vel_jitter=10)
 
     # Final Merge
     final_midi = pretty_midi.PrettyMIDI()
